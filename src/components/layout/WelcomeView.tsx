@@ -10,7 +10,6 @@ import './WelcomeView.css';
  * - WhatsApp-style welcome icon
  * - Application title and subtitle
  * - Usage instructions
- * - End-to-end encryption notice
  */
 export function WelcomeView() {
   return (
@@ -25,33 +24,31 @@ export function WelcomeView() {
           </svg>
         </div>
         
-        <h1 className="welcome-title">LinkUp Web</h1>
+        <h1 className="welcome-title">👋 欢迎使用 LinkUp！</h1>
         <p className="welcome-subtitle">
-          在电脑上发送和接收消息
+          开始你的聊天之旅，随时随地保持联系 ✨
         </p>
         
         <div className="welcome-steps">
           <div className="step-item">
-            <span className="step-number">1</span>
-            <p className="step-text">点击左上角"新建聊天"开始对话</p>
+            <span className="step-number">➕</span>
+            <p className="step-text">点击中间面板右上角的 ➕ 开始新聊天</p>
           </div>
           <div className="step-item">
-            <span className="step-number">2</span>
-            <p className="step-text">选择左侧对话继续聊天</p>
+            <span className="step-number">💬</span>
+            <p className="step-text">在中间面板选择对话，继续聊天</p>
           </div>
           <div className="step-item">
-            <span className="step-number">3</span>
-            <p className="step-text">管理您的个人资料信息</p>
+            <span className="step-number">👤</span>
+            <p className="step-text">点击左下角头像，设置个人资料</p>
           </div>
+        </div>
+        
+        <div className="welcome-tips">
+          <p className="tip-text">💡 小提示：支持发送文字消息，更多功能即将上线！</p>
         </div>
 
-        <div className="welcome-footer">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/>
-            <path d="M8 4c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1s1-.4 1-1V5c0-.6-.4-1-1-1zm0 6c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1z"/>
-          </svg>
-          <span>端到端加密保护您的隐私</span>
-        </div>
+
       </div>
     </div>
   );

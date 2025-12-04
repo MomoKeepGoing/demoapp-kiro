@@ -85,6 +85,9 @@ export function ConversationView({
 
   // Load user profile and avatar
   useEffect(() => {
+    // Reset avatar immediately when otherUserId changes
+    setAvatarUrl(null);
+    
     const loadUserProfile = async () => {
       try {
         const { data: profile } = await client.models.UserProfile.get({
@@ -94,9 +97,12 @@ export function ConversationView({
         if (profile?.avatarUrl) {
           const result = await getUrl({ path: profile.avatarUrl });
           setAvatarUrl(result.url.toString());
+        } else {
+          setAvatarUrl(null);
         }
       } catch (err) {
         console.error('Error loading user profile:', err);
+        setAvatarUrl(null);
       }
     };
     
@@ -522,15 +528,16 @@ export function ConversationView({
           </button>
         )}
         
-        <div className="header-user-info">
+        <div className="header-user-info" key={otherUserId}>
           {avatarUrl ? (
             <img
+              key={`avatar-${otherUserId}`}
               src={avatarUrl}
               alt={otherUserName}
               className="header-avatar"
             />
           ) : (
-            <div className="header-avatar-placeholder">
+            <div className="header-avatar-placeholder" key={`placeholder-${otherUserId}`}>
               {otherUserName.charAt(0).toUpperCase()}
             </div>
           )}
