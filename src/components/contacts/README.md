@@ -93,6 +93,7 @@ Contact card component for displaying contact information in the contact list.
 
 **Features**:
 - Display contact avatar and username (real-time synced)
+- Send message button (optional)
 - Delete contact button
 - Delete confirmation dialog with overlay
 - Loading state during delete operation
@@ -105,6 +106,7 @@ Contact card component for displaying contact information in the contact list.
 **Props**:
 - `contact: Contact` - Contact information to display
 - `onDeleteContact: (contact: Contact) => void` - Callback when delete is confirmed
+- `onSendMessage?: (contact: Contact) => void` - Optional callback when send message button clicked
 - `isDeleting?: boolean` - Loading state during delete operation
 
 **Requirements**: 3.3, 4.1, 4.2, 6.2, 6.3

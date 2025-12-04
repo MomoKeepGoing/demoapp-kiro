@@ -321,37 +321,85 @@ return sortedContacts.map((contact) => {
 
 See `docs/CONTACT-SYNC-ENHANCEMENT.md` and `docs/CONTACT-AVATAR-DISPLAY.md` for detailed implementation notes.
 
+### 7. Message System Data Model
+
+**Location**: `amplify/data/resource.ts`
+
+**Description**: Optimized data models for real-time messaging with efficient querying and authorization.
+
+**Message Model**:
+- **Authorization**: Dual owner-based access (sender and receiver)
+- **Indexes**: Three GSIs for efficient queries
+  - `bySender`: Query messages sent by a user
+  - `byReceiver`: Query messages received by a user
+  - `byConversation`: Query all messages in a conversation
+- **Status tracking**: sending/sent/failed for reliable delivery
+- **Read receipts**: `isRead` boolean for unread message tracking
+
+**Conversation Model**:
+- **Authorization**: Owner-based (each user maintains their own conversations)
+- **Denormalized data**: Stores other user's name and avatar to avoid joins
+- **Unread counter**: Cached count for fast display
+- **Index**: `byUser` sorted by `lastMessageAt` for efficient conversation list
+
+**Benefits**:
+- Fast message queries with proper indexes
+- Secure dual-access authorization
+- Efficient conversation list sorting
+- Reduced API calls with denormalized data
+- Real-time updates via GraphQL subscriptions
+
+**Trade-offs**:
+- Denormalized data requires updates when user profiles change
+- Each user stores their own conversation record (storage overhead)
+- Unread count must be maintained by client
+
 ## Future Optimizations
 
 ### Planned Improvements
 
-1. **Image Lazy Loading**
+1. **Message Pagination**
+   - Implement cursor-based pagination for message history
+   - Load messages in chunks (50 per page)
+   - Infinite scroll for smooth UX
+
+2. **Message Caching**
+   - Client-side message cache with React Query
+   - Optimistic updates for instant feedback
+   - Background sync for offline messages
+
+3. **Subscription Optimization**
+   - Filter subscriptions by conversation ID
+   - Batch subscription updates
+   - Reconnection with exponential backoff
+
+4. **Image Lazy Loading**
    - Load avatar images only when visible
    - Use intersection observer
    - Placeholder images while loading
 
-2. **Service Worker**
+5. **Service Worker**
    - Offline support
    - Background sync
    - Push notifications
 
-3. **CDN Optimization**
+6. **CDN Optimization**
    - CloudFront distribution
    - Edge caching
    - Gzip/Brotli compression
 
-4. **Contact Profile Sync Optimization**
+7. **Contact Profile Sync Optimization**
    - Batch query API for multiple UserProfiles
    - Client-side caching with React Query or SWR
    - Incremental updates (only fetch recently updated profiles)
    - WebSocket subscriptions for real-time profile updates
 
-5. **Database Optimization**
+8. **Database Optimization**
    - DynamoDB GSI for common queries
    - Caching layer (Redis)
    - Batch operations
 
-6. **API Optimization**
+9. **API Optimization**
    - GraphQL query optimization
    - AppSync caching
    - Subscription filtering

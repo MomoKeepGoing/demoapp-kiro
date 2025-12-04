@@ -7,6 +7,7 @@ interface ContactListProps {
   contacts: Contact[];
   isLoading: boolean;
   onDeleteContact: (contact: Contact) => void;
+  onSendMessage?: (contact: Contact) => void;
   deletingContactId?: string | null;
 }
 
@@ -26,6 +27,7 @@ export function ContactList({
   contacts, 
   isLoading, 
   onDeleteContact,
+  onSendMessage,
   deletingContactId 
 }: ContactListProps) {
   // Requirement 6.6: Display loading indicator during data loading
@@ -72,7 +74,6 @@ export function ContactList({
     <div className="contact-list">
       <div className="contact-list-header">
         <h2 className="contact-list-title">我的联系人</h2>
-        <span className="contact-list-count">{contacts.length}</span>
       </div>
       <div className="contact-list-items">
         {contacts.map((contact) => (
@@ -80,6 +81,7 @@ export function ContactList({
             key={`${contact.userId}-${contact.contactUserId}`}
             contact={contact}
             onDeleteContact={onDeleteContact}
+            onSendMessage={onSendMessage}
             isDeleting={deletingContactId === contact.contactUserId}
           />
         ))}

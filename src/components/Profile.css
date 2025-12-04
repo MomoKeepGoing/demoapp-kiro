@@ -471,3 +471,41 @@
     font-size: 2.25rem;
   }
 }
+
+/* Sign out section */
+.profile-actions {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e9edef;
+}
+
+.sign-out-button-profile {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background-color: #fff;
+  border: 1px solid #e9edef;
+  border-radius: 8px;
+  color: #ea4335;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-out-button-profile:hover {
+  background-color: #fef2f2;
+  border-color: #ea4335;
+}
+
+.sign-out-button-profile:active {
+  background-color: #fee2e2;
+  transform: scale(0.98);
+}
+
+.sign-out-button-profile .sign-out-icon {
+  font-size: 1.25rem;
+}

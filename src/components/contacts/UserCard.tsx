@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { getUrl } from 'aws-amplify/storage';
 import type { UserProfile } from '../../utils/contactApi';
 import './UserCard.css';
 
@@ -20,12 +22,46 @@ interface UserCardProps {
  * - WhatsApp-style design
  */
 export function UserCard({ user, isContact, onAddContact, isAdding = false }: UserCardProps) {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const defaultAvatar = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.username);
+
+  // Load avatar from S3
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadAvatar = async () => {
+      if (!user.avatarUrl) {
+        setAvatarUrl(null);
+        return;
+      }
+      
+      try {
+        const result = await getUrl({
+          path: user.avatarUrl,
+        });
+        
+        if (mounted) {
+          setAvatarUrl(result.url.toString());
+        }
+      } catch (error) {
+        console.error('[UserCard] Error loading avatar:', error);
+        if (mounted) {
+          setAvatarUrl(null);
+        }
+      }
+    };
+    
+    loadAvatar();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user.avatarUrl]);
 
   return (
     <div className="user-card">
       <img 
-        src={user.avatarUrl || defaultAvatar} 
+        src={avatarUrl || defaultAvatar} 
         alt={user.username}
         className="user-card-avatar"
         onError={(e) => {

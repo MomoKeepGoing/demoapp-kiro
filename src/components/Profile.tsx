@@ -57,10 +57,11 @@ interface ToastMessage {
 
 interface ProfileProps {
   onProfileUpdate?: () => void;
+  onSignOut?: () => void;
 }
 
-export function Profile({ onProfileUpdate }: ProfileProps = {}) {
-  const { user } = useAuthenticator((context) => [context.user]);
+export function Profile({ onProfileUpdate, onSignOut }: ProfileProps = {}) {
+  const { user, signOut } = useAuthenticator((context) => [context.user]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [username, setUsername] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -511,6 +512,17 @@ export function Profile({ onProfileUpdate }: ProfileProps = {}) {
           <div className="view-field">
             <span className="field-value field-value-small">{profile.userId}</span>
           </div>
+        </div>
+
+        {/* Sign out section */}
+        <div className="profile-actions">
+          <button 
+            onClick={onSignOut || signOut} 
+            className="sign-out-button-profile"
+          >
+            <span className="sign-out-icon">⎋</span>
+            <span>退出登录</span>
+          </button>
         </div>
       </div>
     </div>

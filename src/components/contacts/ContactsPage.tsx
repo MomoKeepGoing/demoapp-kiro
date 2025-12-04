@@ -23,6 +23,7 @@ interface ToastState {
 
 interface ContactsPageProps {
   onBack?: () => void;
+  onSendMessage?: (userId: string, username: string) => void;
 }
 
 /**
@@ -39,7 +40,7 @@ interface ContactsPageProps {
  * - Toast notifications for user feedback
  * - State management for search, results, and contacts
  */
-export function ContactsPage({ onBack }: ContactsPageProps) {
+export function ContactsPage({ onBack, onSendMessage }: ContactsPageProps) {
   const { user } = useAuthenticator((context) => [context.user]);
   
   // State management
@@ -227,6 +228,15 @@ export function ContactsPage({ onBack }: ContactsPageProps) {
     setToast((prev) => ({ ...prev, visible: false }));
   };
 
+  /**
+   * Handle send message to contact
+   */
+  const handleSendMessage = (contact: Contact) => {
+    if (onSendMessage) {
+      onSendMessage(contact.contactUserId, contact.contactUsername || '');
+    }
+  };
+
   return (
     <div className="contacts-page">
       {/* Page header */}
@@ -274,6 +284,7 @@ export function ContactsPage({ onBack }: ContactsPageProps) {
           contacts={contacts}
           isLoading={isLoadingContacts}
           onDeleteContact={handleDeleteContact}
+          onSendMessage={handleSendMessage}
           deletingContactId={deletingContactId}
         />
       </div>

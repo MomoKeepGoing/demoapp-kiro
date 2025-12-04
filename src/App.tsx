@@ -3,19 +3,22 @@ import { Authenticator, useAuthenticator, View, Text, Heading } from '@aws-ampli
 import '@aws-amplify/ui-react/styles.css'
 import './App.css'
 import { Loading } from './components/Loading'
+import { NavSidebar, type ViewType } from './components/layout/NavSidebar'
+import { ConversationListPanel, type Conversation } from './components/layout/ConversationListPanel'
+import { WelcomeView } from './components/layout/WelcomeView'
+import { ContactSelector } from './components/layout/ContactSelector'
+import { ConversationView } from './components/messages/ConversationView'
 import { generateClient } from 'aws-amplify/data'
 import { getUrl } from 'aws-amplify/storage'
 import { resendSignUpCode } from 'aws-amplify/auth'
 import type { Schema } from '../amplify/data/resource'
 
 // Lazy load Profile component for code splitting
-// Performance optimization: Only load Profile when needed
 const Profile = lazy(() => import('./components/Profile').then(module => ({ default: module.Profile })))
-const ContactsPage = lazy(() => import('./components/contacts/ContactsPage').then(module => ({ default: module.ContactsPage })))
 
 const client = generateClient<Schema>()
 
-type ViewType = 'welcome' | 'profile' | 'contacts'
+type ContentPanelType = 'welcome' | 'conversation' | 'contactSelector' | 'profile'
 
 interface UserProfile {
   userId: string
@@ -27,14 +30,102 @@ interface UserProfile {
 // Main application component shown after authentication
 function MainApp() {
   const { signOut, user } = useAuthenticator((context) => [context.user])
-  const [currentView, setCurrentView] = useState<ViewType>('welcome')
+  
+  // Navigation state
+  const [currentView, setCurrentView] = useState<ViewType>('messages')
+  const [contentPanel, setContentPanel] = useState<ContentPanelType>('welcome')
+  
+  // User profile state
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  
+  // Conversation state
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0)
 
   // Load user profile on mount
   useEffect(() => {
     loadUserProfile()
+    // Note: 不再需要 loadUnreadCount()，由 ConversationListPanel 负责
   }, [user])
+
+  // Subscribe to new messages to keep unread count in sync
+  useEffect(() => {
+    if (!user) return
+
+    console.log('[App] Setting up message subscription for user:', user.userId)
+
+    // NOTE: Don't use filter here because Amplify's authorization system automatically
+    // filters based on ownerDefinedIn fields (senderId and receiverId).
+    const messageSubscription = client.models.Message.onCreate().subscribe({
+      next: async (data) => {
+        console.log('[App] Received new message:', data)
+        // Only process messages where current user is the receiver
+        if (data && data.receiverId === user.userId) {
+          console.log('[App] Message is for current user, updating conversation')
+          
+          // Update receiver's conversation
+          const userConversationId = `${user.userId}_${data.senderId}`
+          
+          // 检查用户是否正在查看这个对话
+          const isViewingThisConversation = selectedConversationId === userConversationId && contentPanel === 'conversation'
+          console.log('[App] Is viewing this conversation:', isViewingThisConversation)
+          
+          try {
+            const { data: existing } = await client.models.Conversation.get({
+              id: userConversationId,
+            })
+            
+            if (existing) {
+              console.log('[App] Updating existing conversation, current unreadCount:', existing.unreadCount)
+              // 如果用户正在查看对话，不增加未读数；否则 +1
+              const newUnreadCount = isViewingThisConversation ? 0 : (existing.unreadCount ?? 0) + 1
+              await client.models.Conversation.update({
+                id: userConversationId,
+                lastMessageContent: data.content.substring(0, 100),
+                lastMessageAt: data.createdAt || new Date().toISOString(),
+                unreadCount: newUnreadCount,
+                updatedAt: new Date().toISOString(),
+              })
+              console.log('[App] Updated conversation, new unreadCount:', newUnreadCount)
+            } else {
+              console.log('[App] Creating new conversation')
+              // Create new conversation - need to get sender's profile
+              const { data: senderProfile } = await client.models.UserProfile.get({
+                userId: data.senderId,
+              })
+              
+              // 新对话：如果用户正在查看，未读数为0；否则为1
+              const initialUnreadCount = isViewingThisConversation ? 0 : 1
+              await client.models.Conversation.create({
+                id: userConversationId,
+                userId: user.userId,
+                otherUserId: data.senderId,
+                otherUserName: senderProfile?.username || `User_${data.senderId.substring(0, 8)}`,
+                lastMessageContent: data.content.substring(0, 100),
+                lastMessageAt: data.createdAt || new Date().toISOString(),
+                unreadCount: initialUnreadCount,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              })
+              console.log('[App] Created new conversation with unreadCount:', initialUnreadCount)
+            }
+            
+            // Note: 未读数由 ConversationListPanel 自动更新，不需要手动刷新
+          } catch (err) {
+            console.error('[App] Error updating conversation:', err)
+          }
+        }
+      },
+      error: (err) => console.error('[App] Message subscription error:', err),
+    })
+
+    return () => messageSubscription.unsubscribe()
+  }, [user])
+
+  // Note: 总未读数现在由 ConversationListPanel 通过 onUnreadCountChange 回调更新
+  // 不再需要订阅对话更新来重新计算
 
   const loadUserProfile = async () => {
     if (!user) return
@@ -64,145 +155,162 @@ function MainApp() {
     }
   }
 
+
+
+  // Handle view changes from nav sidebar
+  const handleViewChange = (view: ViewType) => {
+    setCurrentView(view)
+    
+    if (view === 'messages') {
+      // Show welcome if no conversation selected
+      if (!selectedConversationId) {
+        setContentPanel('welcome')
+      }
+    } else if (view === 'profile') {
+      setContentPanel('profile')
+      setSelectedConversationId(null)
+    }
+  }
+
+  // Handle new chat button click
+  const handleNewChat = () => {
+    setContentPanel('contactSelector')
+    setSelectedConversationId(null)
+  }
+
+  // Handle conversation selection
+  const handleConversationSelect = (conversationId: string, conversation: Conversation) => {
+    setSelectedConversationId(conversationId)
+    setSelectedConversation(conversation)
+    setContentPanel('conversation')
+  }
+
+  // Handle contact selection (from ContactSelector)
+  const handleContactSelect = async (userId: string, username: string) => {
+    // Check if conversation already exists
+    const conversationId = `${user.userId}_${userId}`
+    
+    try {
+      const { data: existing } = await client.models.Conversation.get({
+        id: conversationId,
+      })
+      
+      if (existing) {
+        // Open existing conversation
+        const conversation: Conversation = {
+          id: existing.id,
+          userId: existing.userId,
+          otherUserId: existing.otherUserId,
+          otherUserName: existing.otherUserName,
+          lastMessageContent: existing.lastMessageContent,
+          lastMessageAt: existing.lastMessageAt,
+          unreadCount: existing.unreadCount ?? 0,
+          createdAt: existing.createdAt,
+          updatedAt: existing.updatedAt,
+        }
+        setSelectedConversationId(conversationId)
+        setSelectedConversation(conversation)
+      } else {
+        // Create new conversation object for first-time chat
+        const newConversation: Conversation = {
+          id: conversationId,
+          userId: user.userId,
+          otherUserId: userId,
+          otherUserName: username,
+          lastMessageContent: '',
+          lastMessageAt: new Date().toISOString(),
+          unreadCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        setSelectedConversationId(conversationId)
+        setSelectedConversation(newConversation)
+      }
+      
+      setContentPanel('conversation')
+    } catch (err) {
+      console.error('Error checking conversation:', err)
+      // Still open conversation view even if check fails
+      const newConversation: Conversation = {
+        id: conversationId,
+        userId: user.userId,
+        otherUserId: userId,
+        otherUserName: username,
+        lastMessageContent: '',
+        lastMessageAt: new Date().toISOString(),
+        unreadCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      setSelectedConversationId(conversationId)
+      setSelectedConversation(newConversation)
+      setContentPanel('conversation')
+    }
+  }
+
+  // Handle back from content panels
+  const handleBackToWelcome = () => {
+    setContentPanel('welcome')
+    setSelectedConversationId(null)
+    setSelectedConversation(null)
+    // Note: 未读数由 ConversationListPanel 自动更新
+  }
+
   return (
     <div className="main-app">
-      {/* Left sidebar - WhatsApp style */}
-      <aside className="app-sidebar">
-        <div className="sidebar-header">
-          <div className="app-logo">
-            <div className="logo-icon">💬</div>
-            <span className="app-name">LinkUp</span>
-          </div>
-          <button onClick={signOut} className="sign-out-button" title="登出">
-            <span className="sign-out-icon">⎋</span>
-          </button>
-        </div>
-
-        <div className="sidebar-search">
-          <div className="search-container">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="搜索或开始新对话"
-              className="search-input"
-              disabled
-            />
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${currentView === 'welcome' ? 'active' : ''}`}
-            onClick={() => setCurrentView('welcome')}
-          >
-            <span className="nav-icon">🏠</span>
-            <span className="nav-label">首页</span>
-          </button>
-          <button
-            className={`nav-item ${currentView === 'contacts' ? 'active' : ''}`}
-            onClick={() => setCurrentView('contacts')}
-          >
-            <span className="nav-icon">👥</span>
-            <span className="nav-label">联系人</span>
-          </button>
-          <button
-            className="nav-item disabled"
-            disabled
-          >
-            <span className="nav-icon">💬</span>
-            <span className="nav-label">聊天</span>
-            <span className="coming-soon-badge">即将推出</span>
-          </button>
-        </nav>
-
-        <div className="sidebar-content">
-          <div className="chat-list-placeholder">
-            <div className="placeholder-icon">💬</div>
-            <h3>聊天功能即将推出</h3>
-            <p>我们正在开发实时聊天功能，敬请期待！</p>
-          </div>
-        </div>
-
-        <div className="sidebar-footer">
-          <button 
-            className="user-info"
-            onClick={() => setCurrentView('profile')}
-            title="查看个人资料"
-          >
-            {avatarPreview ? (
-              <img 
-                src={avatarPreview} 
-                alt="用户头像" 
-                className="user-avatar-small user-avatar-image"
-              />
-            ) : (
-              <div className="user-avatar-small">
-                {userProfile?.username?.charAt(0).toUpperCase() || 
-                 user?.signInDetails?.loginId?.charAt(0).toUpperCase() || 'U'}
-              </div>
-            )}
-            <div className="user-details">
-              <span className="user-name">
-                {userProfile?.username || user?.signInDetails?.loginId || '新用户'}
-              </span>
-            </div>
-          </button>
-        </div>
+      {/* Left navigation sidebar */}
+      <aside className="app-nav-sidebar">
+        <NavSidebar
+          currentView={currentView}
+          totalUnread={totalUnreadMessages}
+          userProfile={userProfile}
+          avatarPreview={avatarPreview}
+          onViewChange={handleViewChange}
+        />
       </aside>
 
-      {/* Main content area */}
-      <main className="app-main">
-        {currentView === 'welcome' ? (
-          <div className="welcome-view">
-            <div className="welcome-content">
-              <div className="welcome-icon">
-                <svg viewBox="0 0 303 172" width="360" height="205" preserveAspectRatio="xMidYMid meet">
-                  <path fill="#DFE5E7" d="M64.8 172.6c-3.2 0-6.3-.9-9.1-2.7L9.4 145.6c-6.2-3.9-8-12.1-4.1-18.3 3.9-6.2 12.1-8 18.3-4.1l46.3 24.3c6.2 3.9 8 12.1 4.1 18.3-2.4 3.9-6.6 6.1-11 6.1z"/>
-                  <path fill="#DFE5E7" d="M238.2 172.6c-4.4 0-8.6-2.2-11-6.1-3.9-6.2-2.1-14.4 4.1-18.3l46.3-24.3c6.2-3.9 14.4-2.1 18.3 4.1 3.9 6.2 2.1 14.4-4.1 18.3l-46.3 24.3c-2.8 1.8-5.9 2.7-9.1 2.7z"/>
-                  <path fill="#DFE5E7" d="M151.5 0C67.8 0 0 67.8 0 151.5S67.8 303 151.5 303 303 235.2 303 151.5 235.2 0 151.5 0zm0 286C77.2 286 17 225.8 17 151.5S77.2 17 151.5 17 286 77.2 286 151.5 225.8 286 151.5 286z"/>
-                  <path fill="#00A884" d="M151.5 34c-64.9 0-117.5 52.6-117.5 117.5 0 25.4 8.1 49 21.9 68.3l-14.4 52.6c-.8 2.9.7 6 3.6 7.1.9.3 1.8.5 2.7.5 2 0 3.9-.9 5.2-2.5l37.5-45c15.8 8.6 33.8 13.5 53 13.5 64.9 0 117.5-52.6 117.5-117.5S216.4 34 151.5 34z"/>
-                </svg>
-              </div>
-              <h1 className="welcome-title">LinkUp Web</h1>
-              <p className="welcome-subtitle">
-                在电脑上发送和接收消息
-              </p>
-              
-              <div className="welcome-steps">
-                <div className="step-item">
-                  <span className="step-number">1</span>
-                  <p className="step-text">点击左侧"联系人"添加好友</p>
-                </div>
-                <div className="step-item">
-                  <span className="step-number">2</span>
-                  <p className="step-text">管理您的个人资料信息</p>
-                </div>
-                <div className="step-item">
-                  <span className="step-number">3</span>
-                  <p className="step-text">等待聊天功能上线</p>
-                </div>
-              </div>
+      {/* Middle conversation list panel */}
+      <aside className="app-middle-panel">
+        <ConversationListPanel
+          currentUserId={user.userId}
+          selectedConversationId={selectedConversationId}
+          onConversationSelect={handleConversationSelect}
+          onNewChat={handleNewChat}
+          isNewChatActive={contentPanel === 'contactSelector'}
+          onUnreadCountChange={setTotalUnreadMessages}
+        />
+      </aside>
 
-              <div className="welcome-footer">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/>
-                  <path d="M8 4c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1s1-.4 1-1V5c0-.6-.4-1-1-1zm0 6c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1z"/>
-                </svg>
-                <span>端到端加密保护您的隐私</span>
-              </div>
-            </div>
-          </div>
-        ) : currentView === 'contacts' ? (
-          <Suspense fallback={<Loading text="加载中..." />}>
-            <ContactsPage onBack={() => setCurrentView('welcome')} />
-          </Suspense>
-        ) : (
-          <>
-            <div className="main-header">
+      {/* Right content panel */}
+      <main className="app-content-panel">
+        {contentPanel === 'welcome' && <WelcomeView />}
+        
+        {contentPanel === 'conversation' && selectedConversation && (
+          <ConversationView
+            conversationId={selectedConversation.id}
+            otherUserId={selectedConversation.otherUserId}
+            otherUserName={selectedConversation.otherUserName}
+            currentUserId={user.userId}
+            onBack={handleBackToWelcome}
+            registerMessageHandler={() => {}}
+          />
+        )}
+        
+        {contentPanel === 'contactSelector' && (
+          <ContactSelector
+            onBack={handleBackToWelcome}
+            onSelectContact={handleContactSelect}
+          />
+        )}
+        
+        {contentPanel === 'profile' && (
+          <div className="profile-wrapper">
+            <div className="profile-header">
               <button 
-                className="back-button"
-                onClick={() => setCurrentView('welcome')}
+                className="btn-back"
+                onClick={handleBackToWelcome}
                 title="返回"
+                aria-label="返回"
               >
                 ←
               </button>
@@ -211,12 +319,12 @@ function MainApp() {
                 <p className="header-subtitle">管理您的个人信息</p>
               </div>
             </div>
-            <div className="main-content">
+            <div className="profile-content">
               <Suspense fallback={<Loading text="加载中..." />}>
-                <Profile onProfileUpdate={loadUserProfile} />
+                <Profile onProfileUpdate={loadUserProfile} onSignOut={signOut} />
               </Suspense>
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>

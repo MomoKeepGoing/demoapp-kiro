@@ -253,12 +253,73 @@ const ContactsPage = lazy(() => import('./components/contacts/ContactsPage').the
    - 添加账户锁定机制
    - 实现密码历史记录
 
+## 数据模型
+
+### 已实现的数据模型
+
+#### UserProfile
+用户资料信息，包含用户名、头像等基本信息。
+
+#### Contact
+联系人关系，记录用户之间的联系关系。
+
+#### Message
+消息记录，存储用户之间发送的文本消息。
+
+**字段**:
+- `senderId`: 发送者用户ID
+- `receiverId`: 接收者用户ID
+- `conversationId`: 所属对话ID
+- `content`: 消息内容（最大5000字符）
+- `status`: 消息状态（sending/sent/failed）
+- `isRead`: 是否已读
+- `createdAt`: 创建时间
+- `updatedAt`: 更新时间
+
+**授权规则**:
+- 发送者可以读取和更新自己发送的消息
+- 接收者可以读取和更新（标记已读）接收的消息
+
+**索引**:
+- `bySender`: 按发送者和时间查询
+- `byReceiver`: 按接收者和时间查询
+- `byConversation`: 按对话和时间查询
+
+#### Conversation
+对话管理，维护用户的对话列表和未读数量。
+
+**字段**:
+- `userId`: 当前用户ID（所有者）
+- `otherUserId`: 对方用户ID
+- `otherUserName`: 对方用户名（冗余存储）
+- `otherUserAvatar`: 对方头像URL（冗余存储）
+- `lastMessageContent`: 最后一条消息内容预览
+- `lastMessageAt`: 最后消息时间
+- `unreadCount`: 未读消息数量
+- `createdAt`: 创建时间
+- `updatedAt`: 更新时间
+
+**授权规则**:
+- 只有对话所有者可以访问自己的对话记录
+
+**索引**:
+- `byUser`: 按用户和最后消息时间查询（用于对话列表排序）
+
+**设计说明**:
+- Conversation 是单向的，每个用户维护自己的对话列表
+- 冗余存储对方用户信息，避免频繁关联查询
+- unreadCount 在前端计算并更新，简化后端逻辑
+
 ## 相关文档
 
 - [AWS Amplify UI Authenticator](https://ui.docs.amplify.aws/react/connected-components/authenticator)
 - [AWS Cognito 文档](https://docs.aws.amazon.com/cognito/)
+- [AWS AppSync 文档](https://docs.aws.amazon.com/appsync/)
+- [GraphQL Subscriptions](https://docs.amplify.aws/react/build-a-backend/data/subscribe-data/)
 - [需求文档](.kiro/specs/amplify-im-app/requirements.md)
 - [设计文档](.kiro/specs/amplify-im-app/design.md)
+- [消息功能需求](.kiro/specs/messaging/requirements.md)
+- [消息功能设计](.kiro/specs/messaging/design.md)
 
 
 ---

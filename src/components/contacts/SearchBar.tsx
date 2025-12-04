@@ -5,6 +5,7 @@ interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   isSearching: boolean;
+  placeholder?: string;
 }
 
 /**
@@ -17,7 +18,7 @@ interface SearchBarProps {
  * - Loading state indicator
  * - WhatsApp-style design
  */
-export function SearchBar({ value, onChange, isSearching }: SearchBarProps) {
+export function SearchBar({ value, onChange, isSearching, placeholder = "搜索用户名或邮箱..." }: SearchBarProps) {
   const [localValue, setLocalValue] = useState(value);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -57,7 +58,7 @@ export function SearchBar({ value, onChange, isSearching }: SearchBarProps) {
         <input
           type="text"
           className="search-bar-input"
-          placeholder="搜索用户名或邮箱..."
+          placeholder={placeholder}
           value={localValue}
           onChange={(e) => handleInputChange(e.target.value)}
           disabled={isSearching}

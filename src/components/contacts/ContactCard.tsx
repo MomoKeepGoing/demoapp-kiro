@@ -6,6 +6,7 @@ import './ContactCard.css';
 interface ContactCardProps {
   contact: Contact;
   onDeleteContact: (contact: Contact) => void;
+  onSendMessage?: (contact: Contact) => void;
   isDeleting?: boolean;
 }
 
@@ -21,7 +22,7 @@ interface ContactCardProps {
  * - Responsive layout
  * - Load avatar from S3 with signed URLs
  */
-export function ContactCard({ contact, onDeleteContact, isDeleting = false }: ContactCardProps) {
+export function ContactCard({ contact, onDeleteContact, onSendMessage, isDeleting = false }: ContactCardProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState(false);
@@ -108,14 +109,26 @@ export function ContactCard({ contact, onDeleteContact, isDeleting = false }: Co
         <div className="contact-card-info">
           <h3 className="contact-card-username">{contact.contactUsername}</h3>
         </div>
-        <button 
-          className="contact-card-delete-button"
-          onClick={handleDeleteClick}
-          disabled={isDeleting}
-          aria-label="删除联系人"
-        >
-          {isDeleting ? '删除中...' : '删除'}
-        </button>
+        <div className="contact-card-actions">
+          {onSendMessage && (
+            <button 
+              className="contact-card-message-button"
+              onClick={() => onSendMessage(contact)}
+              aria-label="发送消息"
+              title="发送消息"
+            >
+              💬
+            </button>
+          )}
+          <button 
+            className="contact-card-delete-button"
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+            aria-label="删除联系人"
+          >
+            {isDeleting ? '⏳' : '🗑️'}
+          </button>
+        </div>
       </div>
 
       {showConfirmDialog && (
