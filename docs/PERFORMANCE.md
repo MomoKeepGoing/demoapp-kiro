@@ -8,7 +8,91 @@ The application implements several performance optimizations to ensure fast load
 
 ## Implemented Optimizations
 
-### 1. Image Compression
+### 1. Hybrid Storage with Tab Isolation
+
+**Location**: `src/main.tsx`
+
+**Description**: Amplify authentication uses a hybrid storage adapter that combines localStorage persistence with tab-specific isolation. Each tab gets a unique ID stored in sessionStorage, while auth tokens are stored in localStorage with tab-prefixed keys.
+
+**Implementation**:
+```typescript
+// Generate unique tab ID
+const generateTabId = () => {
+  return `tab_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+}
+
+// Initialize tab ID: use sessionStorage for tab identity
+const initializeTabId = () => {
+  let tabId = sessionStorage.getItem('__tab_id__')
+  
+  if (!tabId) {
+    // New tab or duplicated tab - generate new ID
+    tabId = generateTabId()
+    sessionStorage.setItem('__tab_id__', tabId)
+  }
+  
+  return tabId
+}
+
+const TAB_ID = initializeTabId()
+
+// Hybrid storage adapter: localStorage with tab-specific keys
+const hybridStorageAdapter = {
+  setItem: (key: string, value: string) => {
+    const tabKey = `${TAB_ID}:${key}`
+    localStorage.setItem(tabKey, value)
+  },
+  getItem: (key: string) => {
+    const tabKey = `${TAB_ID}:${key}`
+    return localStorage.getItem(tabKey)
+  },
+  removeItem: (key: string) => {
+    const tabKey = `${TAB_ID}:${key}`
+    localStorage.removeItem(tabKey)
+  },
+  clear: () => {
+    // Only clear items for this specific tab
+    const keys = Object.keys(localStorage)
+    keys.forEach((key) => {
+      if (key.startsWith(`${TAB_ID}:`)) {
+        localStorage.removeItem(key)
+      }
+    })
+  },
+}
+
+cognitoUserPoolsTokenProvider.setKeyValueStorage(hybridStorageAdapter)
+```
+
+**Benefits**:
+- **Refresh Persistence**: Users stay logged in after page refresh (localStorage persists)
+- **Tab Isolation**: Each tab has its own session (tab-specific keys)
+- **Multi-Account Support**: Different accounts can be used in different tabs simultaneously
+- **Duplicate Tab Protection**: Duplicating a tab requires new login (new TAB_ID generated)
+- **Clean Separation**: Tab-specific clear() only removes data for that tab
+
+**How It Works**:
+1. On page load, check sessionStorage for existing `__tab_id__`
+2. If found (page refresh): reuse the same tab ID → auth tokens persist
+3. If not found (new/duplicated tab): generate new tab ID → requires new login
+4. All Amplify auth keys are prefixed with the tab ID (e.g., `tab_1733356800000_a1b2c3d4e5f6g7h:CognitoIdentityServiceProvider.xxx`)
+5. Auth tokens stored in localStorage survive page refresh
+6. SessionStorage tab ID is cleared when tab closes, making those localStorage keys inaccessible
+
+**Use Cases**:
+- Normal browsing: Users stay logged in after refresh
+- Testing with multiple accounts simultaneously
+- Development and debugging with multiple user contexts
+- QA testing scenarios requiring multiple concurrent sessions
+- Shared computers where tab isolation is important
+
+**Trade-offs**:
+- Users must re-authenticate when duplicating tabs (security feature)
+- LocalStorage accumulates keys from closed tabs (cleaned up manually or on browser restart)
+- Not suitable for shared devices without explicit logout
+- Slightly more complex than pure sessionStorage or localStorage
+
+### 2. Image Compression
 
 **Location**: `src/utils/imageCompression.ts`
 
@@ -34,7 +118,7 @@ const compressedFile = await compressImage(originalFile)
 - Faster page load times when displaying avatars
 - Better mobile experience on slower connections
 
-### 2. Code Splitting
+### 3. Code Splitting
 
 **Location**: `src/App.tsx`, `vite.config.ts`
 
@@ -84,7 +168,7 @@ dist/assets/index-*.js            297.50 kB │ gzip:  91.04 kB
 dist/assets/amplify-vendor-*.js   510.79 kB │ gzip: 142.64 kB
 ```
 
-### 3. Component Lazy Loading
+### 4. Component Lazy Loading
 
 **Description**: Non-critical components are loaded on-demand using React.lazy() and Suspense.
 
@@ -96,7 +180,7 @@ dist/assets/amplify-vendor-*.js   510.79 kB │ gzip: 142.64 kB
 - Settings components
 - Media viewer components
 
-### 4. Optimized Dependencies
+### 5. Optimized Dependencies
 
 **Description**: Dependencies are split into separate chunks for better caching.
 
@@ -160,6 +244,83 @@ npm run test:coverage
 - App chunks: Medium-term caching (change with updates)
 - Images: Compressed and cached by CloudFront
 
+### 6. Real-Time Contact Profile Sync with Avatar Display
+
+**Location**: `src/utils/contactApi.ts` - `listContacts()`, `src/components/contacts/ContactCard.tsx`
+
+**Description**: Contact list automatically fetches the latest user profile data (username and avatar) when loading contacts, ensuring users always see up-to-date information. Avatars are loaded from S3 with proper access control.
+
+**Implementation**:
+```typescript
+// Fetch latest UserProfile data for all contacts
+const contactUserIds = data.map(c => c.contactUserId);
+const profilePromises = contactUserIds.map(async (contactUserId) => {
+  try {
+    const { data: profile } = await client.models.UserProfile.get({
+      userId: contactUserId,
+    });
+    return profile;
+  } catch (err) {
+    console.error(`Error fetching profile for ${contactUserId}:`, err);
+    return null;
+  }
+});
+
+const profiles = await Promise.all(profilePromises);
+const profileMap = new Map(
+  profiles
+    .filter((p): p is NonNullable<typeof p> => p !== null)
+    .map(p => [p.userId, p])
+);
+
+// Use latest profile data, fallback to cached data
+return sortedContacts.map((contact) => {
+  const latestProfile = profileMap.get(contact.contactUserId);
+  return {
+    userId: contact.userId,
+    contactUserId: contact.contactUserId,
+    contactUsername: latestProfile?.username ?? contact.contactUsername,
+    contactAvatarUrl: latestProfile?.avatarUrl ?? contact.contactAvatarUrl,
+    createdAt: contact.createdAt,
+    updatedAt: contact.updatedAt,
+  };
+});
+```
+
+**Benefits**:
+- **Real-time sync**: Users always see the latest contact information
+- **Parallel queries**: Uses `Promise.all` to fetch all profiles simultaneously
+- **Graceful degradation**: Falls back to cached data if profile fetch fails
+- **Error isolation**: Single profile fetch failure doesn't affect other contacts
+
+**Performance Characteristics**:
+- **Additional API calls**: N UserProfile queries (N = number of contacts)
+- **Parallel execution**: All queries run in parallel, total latency ≈ single query latency
+- **Network overhead**: Increases with contact count, but queries are lightweight
+
+**Trade-offs**:
+- More API calls per contact list load
+- Slightly higher latency for large contact lists
+- Better user experience with always-current data
+- Reduced confusion from stale cached information
+
+**Authorization**: 
+- **UserProfile**: Authenticated users can read other users' UserProfile data
+- **Storage**: Authenticated users can read any profile picture from S3 (configured in `amplify/storage/resource.ts`)
+  ```typescript
+  'profile-pictures/{entity_id}/*': [
+    allow.entity('identity').to(['read', 'write', 'delete']),
+    allow.authenticated.to(['read']), // Enables contact avatar display
+  ]
+  ```
+
+**Security Model**:
+- Users can only write/delete their own avatars (entity-based control)
+- All authenticated users can read any avatar (enables contact list display)
+- S3 signed URLs are generated on-demand for secure access
+
+See `docs/CONTACT-SYNC-ENHANCEMENT.md` and `docs/CONTACT-AVATAR-DISPLAY.md` for detailed implementation notes.
+
 ## Future Optimizations
 
 ### Planned Improvements
@@ -179,12 +340,18 @@ npm run test:coverage
    - Edge caching
    - Gzip/Brotli compression
 
-4. **Database Optimization**
+4. **Contact Profile Sync Optimization**
+   - Batch query API for multiple UserProfiles
+   - Client-side caching with React Query or SWR
+   - Incremental updates (only fetch recently updated profiles)
+   - WebSocket subscriptions for real-time profile updates
+
+5. **Database Optimization**
    - DynamoDB GSI for common queries
    - Caching layer (Redis)
    - Batch operations
 
-5. **API Optimization**
+6. **API Optimization**
    - GraphQL query optimization
    - AppSync caching
    - Subscription filtering

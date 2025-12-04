@@ -1,0 +1,346 @@
+/* ContactCard component - WhatsApp inspired styling */
+
+.contact-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background-color: white;
+  border-bottom: 1px solid #e9edef;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  animation: fadeInSlide 0.3s ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Stagger animation for multiple cards */
+.contact-card:nth-child(1) { animation-delay: 0.05s; }
+.contact-card:nth-child(2) { animation-delay: 0.1s; }
+.contact-card:nth-child(3) { animation-delay: 0.15s; }
+.contact-card:nth-child(4) { animation-delay: 0.2s; }
+.contact-card:nth-child(5) { animation-delay: 0.25s; }
+
+.contact-card:hover {
+  background-color: #f5f6f6;
+  transform: translateX(2px);
+}
+
+.contact-card:active {
+  background-color: #e9edef;
+  transform: scale(0.99);
+}
+
+.contact-card:last-child {
+  border-bottom: none;
+}
+
+.contact-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #dfe5e7;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contact-card:hover .contact-card-avatar {
+  transform: scale(1.05);
+}
+
+.contact-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.contact-card-username {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #111b21;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-card-delete-button {
+  padding: 0.5rem 1rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-card-delete-button:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.contact-card-delete-button:active:not(:disabled) {
+  background-color: #bd2130;
+}
+
+.contact-card-delete-button:disabled {
+  background-color: #e9a0a8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Confirmation Dialog */
+.contact-card-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.25s ease;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.contact-card-dialog {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  animation: slideUpBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUpBounce {
+  0% {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.contact-card-dialog-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111b21;
+  margin: 0 0 1rem 0;
+}
+
+.contact-card-dialog-message {
+  font-size: 0.9375rem;
+  color: #667781;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.contact-card-dialog-message strong {
+  color: #111b21;
+  font-weight: 500;
+}
+
+.contact-card-dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.contact-card-dialog-button {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-card-dialog-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.contact-card-dialog-button:active::before {
+  width: 200px;
+  height: 200px;
+}
+
+.contact-card-dialog-button-cancel {
+  background-color: #e9edef;
+  color: #667781;
+}
+
+.contact-card-dialog-button-cancel:hover {
+  background-color: #d1d7db;
+  transform: translateY(-1px);
+}
+
+.contact-card-dialog-button-cancel:active {
+  transform: translateY(0);
+}
+
+.contact-card-dialog-button-confirm {
+  background-color: #dc3545;
+  color: white;
+}
+
+.contact-card-dialog-button-confirm:hover {
+  background-color: #c82333;
+}
+
+.contact-card-dialog-button-confirm:active {
+  background-color: #bd2130;
+}
+
+/* Touch optimization for mobile devices */
+@media (hover: none) and (pointer: coarse) {
+  .contact-card {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+    min-height: 60px; /* Larger touch target */
+  }
+  
+  .contact-card:active {
+    background-color: #e9edef;
+  }
+  
+  .contact-card-delete-button {
+    min-height: 44px; /* iOS recommended touch target */
+    padding: 0.625rem 1.25rem;
+  }
+  
+  .contact-card-dialog-button {
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .contact-card {
+    padding: 0.75rem 0.875rem;
+    gap: 0.875rem;
+  }
+
+  .contact-card-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .contact-card-username {
+    font-size: 0.9375rem;
+  }
+
+  .contact-card-delete-button {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .contact-card-dialog {
+    padding: 1.25rem;
+  }
+
+  .contact-card-dialog-title {
+    font-size: 1.125rem;
+  }
+
+  .contact-card-dialog-message {
+    font-size: 0.875rem;
+  }
+
+  .contact-card-dialog-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-card {
+    padding: 0.625rem 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .contact-card-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .contact-card-username {
+    font-size: 0.875rem;
+  }
+
+  .contact-card-delete-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .contact-card-dialog {
+    padding: 1rem;
+    width: 95%;
+  }
+
+  .contact-card-dialog-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact-card-dialog-message {
+    font-size: 0.8125rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .contact-card-dialog-actions {
+    gap: 0.5rem;
+  }
+
+  .contact-card-dialog-button {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    min-width: 60px;
+  }
+}

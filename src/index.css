@@ -7,11 +7,11 @@
   font-weight: 400;
 
   /* Colors - WhatsApp palette */
-  --color-primary: #25d366;
-  --color-primary-dark: #1da851;
-  --color-primary-darker: #128c39;
-  --color-secondary: #075e54;
-  --color-secondary-dark: #054d44;
+  --color-primary: #00a884;
+  --color-primary-dark: #008069;
+  --color-primary-darker: #005e4a;
+  --color-secondary: #008069;
+  --color-secondary-dark: #005e4a;
   
   --color-background: #f0f2f5;
   --color-surface: #ffffff;
@@ -22,7 +22,7 @@
   --color-text-secondary: #667781;
   --color-text-tertiary: #8696a0;
   
-  --color-success: #25d366;
+  --color-success: #00a884;
   --color-error: #dc3545;
   --color-warning: #ffc107;
   --color-info: #17a2b8;
@@ -115,7 +115,6 @@ a {
 
 a:hover {
   color: var(--color-primary-dark);
-  text-decoration: underline;
 }
 
 /* Buttons - base reset */
@@ -175,7 +174,7 @@ select {
 
 /* Selection styling */
 ::selection {
-  background-color: rgba(37, 211, 102, 0.3);
+  background-color: rgba(0, 168, 132, 0.3);
   color: var(--color-text-primary);
 }
 

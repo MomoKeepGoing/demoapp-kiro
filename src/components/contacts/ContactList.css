@@ -1,0 +1,260 @@
+/* ContactList component - WhatsApp inspired styling */
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9edef;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contact-list:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.contact-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background-color: #f0f2f5;
+  border-bottom: 1px solid #e9edef;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contact-list-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111b21;
+  margin: 0;
+}
+
+.contact-list-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 0.5rem;
+  background-color: #00a884;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.contact-list-items {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading state */
+.contact-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-top: 1.5rem;
+}
+
+/* Empty state */
+.contact-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 1.5rem;
+  text-align: center;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.contact-list-empty-icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  color: #8696a0;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.contact-list-empty-icon svg {
+  width: 48px;
+  height: 48px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.contact-list-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111b21;
+  margin: 0 0 0.5rem 0;
+}
+
+.contact-list-empty-message {
+  font-size: 0.9375rem;
+  color: #667781;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .contact-list {
+    margin-top: 1.25rem;
+    border-radius: 8px;
+  }
+
+  .contact-list-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .contact-list-title {
+    font-size: 1rem;
+  }
+
+  .contact-list-count {
+    min-width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+  }
+
+  .contact-list-loading,
+  .contact-list-empty {
+    margin-top: 1.25rem;
+    padding: 2.5rem 1.25rem;
+    border-radius: 8px;
+  }
+
+  .contact-list-empty-icon {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 1.25rem;
+  }
+
+  .contact-list-empty-icon svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .contact-list-empty-title {
+    font-size: 1.125rem;
+  }
+
+  .contact-list-empty-message {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-list {
+    margin-top: 1rem;
+    border-radius: 6px;
+  }
+
+  .contact-list-header {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .contact-list-title {
+    font-size: 0.9375rem;
+  }
+
+  .contact-list-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 0.375rem;
+    font-size: 0.6875rem;
+  }
+
+  .contact-list-loading,
+  .contact-list-empty {
+    margin-top: 1rem;
+    padding: 2rem 1rem;
+    border-radius: 6px;
+  }
+
+  .contact-list-empty-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+  }
+
+  .contact-list-empty-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .contact-list-empty-title {
+    font-size: 1rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .contact-list-empty-message {
+    font-size: 0.8125rem;
+    max-width: 260px;
+  }
+}

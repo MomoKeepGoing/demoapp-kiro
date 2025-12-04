@@ -7,7 +7,13 @@
 ### ✅ 已实现
 - 用户注册和邮箱验证
 - 用户登录和会话管理
+- 密码重置功能
 - 个人资料管理（用户名、头像）
+- **联系人管理**
+  - 用户搜索（按用户名或邮箱）
+  - 添加联系人
+  - 联系人列表查看（实时同步用户资料）
+  - 删除联系人
 - WhatsApp 风格的 UI 设计
 - 响应式布局（移动端和桌面端）
 - 实时上传进度显示
@@ -22,10 +28,12 @@
 
 ## 技术栈
 
-- **前端**: React 18 + TypeScript + Vite
+- **前端**: React 19 + TypeScript + Vite
 - **UI 组件**: AWS Amplify UI React
 - **后端**: AWS Amplify Gen2
   - 身份验证: Amazon Cognito
+    - 混合存储：刷新保持登录，标签页隔离
+    - 密码策略：最少8位，需包含大小写字母、数字和特殊字符
   - 数据存储: AWS AppSync + DynamoDB
   - 文件存储: Amazon S3
 - **样式**: CSS (WhatsApp 风格设计系统)
@@ -66,12 +74,21 @@ npm run build
 ```
 src/
 ├── components/          # React 组件
+│   ├── contacts/       # 联系人管理组件
+│   │   ├── ContactsPage.tsx    # 联系人页面主组件
+│   │   ├── SearchBar.tsx       # 搜索栏
+│   │   ├── SearchResults.tsx   # 搜索结果列表
+│   │   ├── UserCard.tsx        # 用户卡片
+│   │   ├── ContactList.tsx     # 联系人列表
+│   │   ├── ContactCard.tsx     # 联系人卡片
+│   │   └── README.md           # 联系人组件文档
 │   ├── Profile.tsx     # 个人资料管理
 │   ├── Toast.tsx       # 通知组件
 │   ├── Loading.tsx     # 加载组件
 │   └── README.md       # 组件文档
 ├── utils/              # 工具函数
-│   └── authConfig.ts   # 认证配置
+│   ├── authConfig.ts   # 认证配置
+│   └── contactApi.ts   # 联系人API工具函数
 ├── App.tsx             # 主应用组件
 ├── App.css             # 全局样式
 ├── main.tsx            # 应用入口
@@ -79,7 +96,7 @@ src/
 
 amplify/
 ├── auth/               # 身份验证资源
-├── data/               # 数据模型
+├── data/               # 数据模型 (UserProfile, Contact)
 ├── storage/            # 文件存储
 └── backend.ts          # 后端配置
 ```
@@ -101,10 +118,18 @@ amplify/
 ## 开发指南
 
 详细的开发文档请参考：
+
+### 用户管理功能
 - [需求文档](.kiro/specs/amplify-im-app/requirements.md)
 - [设计文档](.kiro/specs/amplify-im-app/design.md)
 - [任务列表](.kiro/specs/amplify-im-app/tasks.md)
 - [组件文档](src/components/README.md)
+
+### 联系人管理功能
+- [需求文档](.kiro/specs/contact-management/requirements.md)
+- [设计文档](.kiro/specs/contact-management/design.md)
+- [任务列表](.kiro/specs/contact-management/tasks.md)
+- [联系人组件文档](src/components/contacts/README.md)
 
 ## React + TypeScript + Vite
 
