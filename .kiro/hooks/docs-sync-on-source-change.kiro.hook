@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "name": "Documentation Sync on Source Changes",
+  "description": "Monitors TypeScript source files (*.ts, *.tsx), configuration files (*.json, *.js), and CSS files (*.css) for changes. When changes are detected, prompts the agent to review and update relevant documentation in README.md or the /docs folder to keep documentation in sync with code changes.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "amplify/**/*.ts",
+      "scripts/**/*.ts",
+      "*.ts",
+      "*.tsx",
+      "*.json",
+      "*.js",
+      "src/**/*.css",
+      "*.config.ts",
+      "*.config.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source code files have been modified. Please review the changes and determine if any documentation needs to be updated. Check if the README.md or files in the /docs folder need updates to reflect these code changes. Consider:\n1. Are there new features or components that need documentation?\n2. Have any APIs or interfaces changed that are documented?\n3. Are there new configuration options or patterns introduced?\n4. Do any existing docs contradict the new code?\n\nIf updates are needed, modify the appropriate documentation files (README.md or specific files in /docs). If no updates are needed, briefly explain why the documentation remains accurate."
+  }
+}
