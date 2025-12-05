@@ -45,7 +45,7 @@ export function WelcomeView() {
         </div>
         
         <div className="welcome-tips">
-          <p className="tip-text">💡 小提示：支持发送文字消息，更多功能即将上线！</p>
+          <p className="tip-text">💡 更多功能即将上线！</p>
         </div>
 
 
